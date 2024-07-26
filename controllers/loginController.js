@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
+const User = require('../models/');
 const Joi = require('joi');
 
 // Walidacja danych wejściowych przy logowaniu
@@ -22,6 +22,11 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
       return res.status(401).json({ message: 'Email or password is wrong' });
+    }
+
+    // Sprawdzenie, czy email został zweryfikowany
+    if (!user.verify) {
+      return res.status(401).json({ message: 'Email not verified' });
     }
 
     // Porównanie hasła

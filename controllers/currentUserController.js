@@ -1,4 +1,4 @@
-// Obsługa endpointu obecnego użytkownika
+// controllers/currentUserController.js
 exports.getCurrent = (req, res) => {
   try {
     const { email, subscription } = req.user;
@@ -8,7 +8,7 @@ exports.getCurrent = (req, res) => {
       subscription,
     });
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching current user:', err);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };

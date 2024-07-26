@@ -1,16 +1,16 @@
+const Joi = require('joi'); // Dodaj ten import
+
+const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
-const Joi = require('joi');
-const gravatar = require('gravatar');
+const { sendVerificationEmail } = require('../services/emailService'); // Import serwisu emailowego
 
 // Walidacja danych wejściowych przy rejestracji
 const signupSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
-  username: Joi.string().alphanum().min(3).max(30).required(), // Dodaj pole username
 });
 
-// Obsługa endpointu rejestracji
 exports.signup = async (req, res) => {
   try {
     // Sprawdzenie poprawności danych wejściowych
@@ -19,47 +19,33 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    // Sprawdzenie, czy użytkownik o podanym emailu już istnieje
-    let existingUser = await User.findOne({ email: req.body.email });
+    // Sprawdzenie, czy użytkownik już istnieje
+    const existingUser = await User.findOne({ email: req.body.email });
     if (existingUser) {
       return res.status(409).json({ message: 'Email already in use' });
     }
 
-    // Generowanie avatarURL za pomocą Gravatara
-    const avatarURL = gravatar.url(req.body.email, { s: '200', d: 'retro' }, true);
-
-    // Możesz również dodać sprawdzenie czy avatarURL jest prawidłowy
-    if (!avatarURL.startsWith('http')) {
-      throw new Error('Gravatar URL is invalid');
-    }
-
-    // Hashowanie hasła
+    // Utworzenie nowego użytkownika
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
-
-    // Tworzenie nowego użytkownika
-    const newUser = new User({
+    const verificationToken = uuidv4();
+    
+    const user = new User({
       email: req.body.email,
       password: hashedPassword,
-      username: req.body.username, // Dodaj username do obiektu newUser
-      avatarURL: avatarURL,
-      subscription: 'starter', // Domyślnie ustawiamy subskrypcję
+      verificationToken,
     });
 
-    // Zapis użytkownika w bazie danych
-    await newUser.save();
+    await user.save();
 
-    // Odpowiedź sukcesu
+    // Wysłanie emaila z odnośnikiem do weryfikacji
+    await sendVerificationEmail(user.email, verificationToken);
+
     res.status(201).json({
-      user: {
-        email: newUser.email,
-        subscription: newUser.subscription,
-        avatarURL: newUser.avatarURL,
-        username: newUser.username, // Dodaj username do odpowiedzi
-      },
+      status: 'success',
+      code: 201,
+      message: 'User registered successfully, please check your email for verification',
     });
-  } catch (err) {
-    // Obsługa błędów serwera
-    console.error(err);
+  } catch (error) {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
