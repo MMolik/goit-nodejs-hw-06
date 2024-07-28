@@ -19,6 +19,7 @@ const sendVerificationEmail = (email, token) => {
   console.log('Sender email:', process.env.SENDER_EMAIL);
   console.log('Mailgun domain:', process.env.MAILGUN_DOMAIN);
   
+  // Tworzymy link weryfikacyjny, który będzie zawierał tylko token
   const verificationUrl = `${process.env.BASE_URL}/api/users/verify/${token}`;
   console.log('Verification URL:', verificationUrl);
 

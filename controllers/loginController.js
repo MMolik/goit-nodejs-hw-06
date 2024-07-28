@@ -1,44 +1,35 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/');
-const Joi = require('joi');
+const login = async (req, res) => {
+  const { email, password } = req.body;
 
-// Walidacja danych wejściowych przy logowaniu
-const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().required(),
-});
-
-// Obsługa endpointu logowania
-exports.login = async (req, res) => {
   try {
-    // Sprawdzenie poprawności danych wejściowych
     const { error } = loginSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    // Znalezienie użytkownika w bazie danych
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Email or password is wrong' });
     }
 
-    // Sprawdzenie, czy email został zweryfikowany
     if (!user.verify) {
       return res.status(401).json({ message: 'Email not verified' });
     }
 
     // Porównanie hasła
-    const isMatch = await bcrypt.compare(req.body.password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    // Debugowanie
+    console.log('Input password:', password);
+    console.log('Stored hashed password:', user.password);
+    console.log('Password match:', isMatch);
+
     if (!isMatch) {
       return res.status(401).json({ message: 'Email or password is wrong' });
     }
 
-    // Utworzenie tokena JWT
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    // Odpowiedź sukcesu
     res.status(200).json({
       token,
       user: {
@@ -47,7 +38,6 @@ exports.login = async (req, res) => {
       },
     });
   } catch (err) {
-    // Obsługa błędów serwera
     console.error('Login error:', err);
     res.status(500).json({ message: 'Internal Server Error' });
   }

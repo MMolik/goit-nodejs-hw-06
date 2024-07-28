@@ -15,7 +15,7 @@ app.use('/api/users', usersRouter); // Użyj routera dla tras użytkowników
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error:', err.stack);
   res.status(500).json({ message: 'Something broke!' });
 });
 
