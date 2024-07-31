@@ -1,18 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const authenticate = require('../../middlewares/authenticate');
-const upload = require('../../middlewares/upload');
-const updateAvatar = require('../../controllers/updateAvatar');
-const { signup } = require('../../controllers/signupController');
-const { login } = require('../../controllers/loginController');
+const verificationController = require('../../controllers/verificationController'); // Poprawne ścieżki
 
-// Endpoint do aktualizacji avatara
-router.patch('/avatars', authenticate, upload.single('avatar'), updateAvatar);
-
-// Endpoint do rejestracji użytkownika
-router.post('/signup', signup);
-
-// Endpoint do logowania użytkownika
-router.post('/login', login);
+// Trasy do obsługi rejestracji, logowania i weryfikacji e-maila
+router.post('/signup', verificationController.signup);
+router.post('/login', verificationController.login);
+router.post('/resend-verification-email', verificationController.resendVerificationEmail); // Dodaj tę linię
+router.get('/verify/:token', verificationController.verifyEmail); // Ta linia jest kluczowa
+router.get('/current', verificationController.getCurrent);
 
 module.exports = router;
